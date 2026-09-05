@@ -143,6 +143,13 @@ export interface AgentDecision {
     timestamp: string;
     comment?: string;
   };
+  groqMetadata?: {
+    model: string;
+    latencyMs?: number;
+    hardware?: string;
+    liveApi?: boolean;
+    reasoningTrace?: string;
+  };
 }
 
 export type PolicyType = 

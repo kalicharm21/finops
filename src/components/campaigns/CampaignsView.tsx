@@ -13,7 +13,8 @@ import {
   Send,
   Sparkles,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  Cpu
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Campaign } from '../../types';
@@ -45,7 +46,13 @@ export const CampaignsView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1b22] tracking-tight">Growth & Revenue Campaigns</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-[#1a1b22] tracking-tight">Growth & Revenue Campaigns</h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#F5F3FF] text-[#6D28D9] border border-[#DDD6FE] rounded-full text-xs font-mono font-bold">
+              <Cpu className="w-3.5 h-3.5 text-[#7C3AED]" />
+              <span>Groq LPU™ Powered</span>
+            </span>
+          </div>
           <p className="text-xs text-[#787587] mt-0.5">
             Autonomous multi-channel discount links, recovery nudges, and promotional attachments.
           </p>

@@ -1,6 +1,6 @@
 {
   "name": "FinOps AI - AgentPay OS",
-  "description": "Autonomous financial operations agent with policy-controlled revenue optimization, live mission control, deterministic guardrails, and Razorpay Test Mode integration.",
+  "description": "Autonomous financial operations agent powered by Groq LPU engine with policy-controlled revenue optimization, live mission control, deterministic guardrails, and Razorpay Test Mode integration.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

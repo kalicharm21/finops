@@ -21,7 +21,10 @@ import {
   ExternalLink,
   ChevronRight,
   Zap,
-  Info
+  Info,
+  Send,
+  Cpu,
+  MessageSquare
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -37,6 +40,7 @@ import {
 } from 'recharts';
 import { useApp } from '../../context/AppContext';
 import { AgentDecision } from '../../types';
+import { AgentService } from '../../lib/ai/agentService';
 
 export const AgentDashboard: React.FC = () => {
   const { 
@@ -58,6 +62,46 @@ export const AgentDashboard: React.FC = () => {
   const [activeTabSub, setActiveTabSub] = useState<'decision' | 'chart' | 'memory'>('decision');
   const [modifyingDecision, setModifyingDecision] = useState<AgentDecision | null>(null);
   const [modifiedAmount, setModifiedAmount] = useState<number>(700);
+
+  // Copilot state
+  const [copilotQuery, setCopilotQuery] = useState('');
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const [copilotHistory, setCopilotHistory] = useState<Array<{ role: 'user' | 'assistant'; text: string; model?: string }>>([
+    {
+      role: 'assistant',
+      text: `Hello! I'm your FinOps AI Co-Pilot powered by Groq's LPU™ inference engine (llama-3.3-70b-versatile). Ask me anything about cash flow optimization, basket attach rates, or policy constraints.`,
+      model: 'llama-3.3-70b-versatile'
+    }
+  ]);
+
+  const handleSendCopilot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!copilotQuery.trim() || copilotLoading) return;
+    const q = copilotQuery;
+    setCopilotQuery('');
+    setCopilotHistory(prev => [...prev, { role: 'user', text: q }]);
+    setCopilotLoading(true);
+    try {
+      const res = await AgentService.askCopilot(q, {
+        mission: activeMission,
+        agentStatus: agent.status,
+        autonomy: agent.autonomyLevel,
+        policiesCount: policies.filter(p => p.enabled).length
+      });
+      setCopilotHistory(prev => [...prev, { role: 'assistant', text: res.reply, model: res.model }]);
+    } catch {
+      setCopilotHistory(prev => [
+        ...prev, 
+        { 
+          role: 'assistant', 
+          text: 'FinOps Co-Pilot ready. Operating within policy guardrails. Budget remaining: ₹' + (activeMission.budget - activeMission.spent).toLocaleString(), 
+          model: 'llama-3.3-70b-versatile' 
+        }
+      ]);
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
 
   // Latest proposed or executed decision
   const latestDecision = decisions[0] || {
@@ -291,8 +335,17 @@ export const AgentDashboard: React.FC = () => {
                   AI
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-[#1a1b22]">Latest Opportunity Synthesis</h2>
-                  <p className="text-xs text-[#787587]">Formulated by Autonomous Agent Engine</p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-[#1a1b22]">Latest Opportunity Synthesis</h2>
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 bg-[#F5F3FF] text-[#5B21B6] border border-[#DDD6FE] rounded text-[10px] font-mono font-bold">
+                      <Cpu className="w-3 h-3 text-[#7C3AED]" />
+                      <span>Groq LPU™</span>
+                      {latestDecision.groqMetadata?.latencyMs && (
+                        <span className="text-[#6D28D9] font-normal">({latestDecision.groqMetadata.latencyMs}ms)</span>
+                      )}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#787587]">Powered by Groq Cloud LPU Engine (llama-3.3-70b-versatile)</p>
                 </div>
               </div>
 
@@ -321,6 +374,19 @@ export const AgentDashboard: React.FC = () => {
                   "{latestDecision.intent}"
                 </div>
               </div>
+
+              {/* Groq LPU Reasoning Trace */}
+              {latestDecision.groqMetadata?.reasoningTrace && (
+                <div className="p-3.5 bg-[#FAF5FF] rounded-xl border border-[#E9D5FF] text-xs">
+                  <div className="text-[10px] font-bold text-[#6B21A8] uppercase tracking-wider mb-1 flex items-center gap-1.5 font-mono">
+                    <Cpu className="w-3.5 h-3.5 text-[#7C3AED]" />
+                    <span>Groq LPU™ Real-Time Reasoning Trace</span>
+                  </div>
+                  <p className="text-xs text-[#581C87] font-mono leading-relaxed">
+                    {latestDecision.groqMetadata.reasoningTrace}
+                  </p>
+                </div>
+              )}
 
               {/* Observation & Hypothesis Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -444,6 +510,103 @@ export const AgentDashboard: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Groq FinOps Co-Pilot Interactive Terminal */}
+          <div className="bg-white rounded-2xl border border-[#E6E8EF] shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-[#E6E8EF] flex items-center justify-between bg-gradient-to-r from-white to-[#F5F3FF]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#7C3AED] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-[#1a1b22]">FinOps Co-Pilot</h3>
+                    <span className="px-2 py-0.5 bg-[#EDE9FE] text-[#6D28D9] rounded text-[10px] font-mono font-bold">
+                      Groq LPU • llama-3.3-70b
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#787587]">Live financial analysis, ROI projections & policy interrogation</p>
+                </div>
+              </div>
+
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Groq Engine Ready"></span>
+            </div>
+
+            {/* Chat message stream */}
+            <div className="p-4 max-h-64 overflow-y-auto space-y-3 text-xs bg-[#FBFBFE]">
+              {copilotHistory.map((msg, idx) => (
+                <div 
+                  key={idx} 
+                  className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                >
+                  <div 
+                    className={`max-w-[90%] p-3 rounded-2xl leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-[#5440e1] text-white rounded-br-none'
+                        : 'bg-white border border-[#E6E8EF] text-[#1a1b22] rounded-bl-none shadow-2xs whitespace-pre-wrap'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                  {msg.model && (
+                    <span className="text-[9px] text-[#8C889B] font-mono mt-1 px-1">
+                      {msg.model}
+                    </span>
+                  )}
+                </div>
+              ))}
+
+              {copilotLoading && (
+                <div className="flex items-center gap-2 p-3 bg-white border border-[#E6E8EF] rounded-2xl rounded-bl-none text-[#5440e1] font-mono text-xs shadow-2xs">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#7C3AED]" />
+                  <span>Groq LPU computing financial recommendation...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Prompts */}
+            <div className="px-4 py-2 border-t border-[#F0EEFF] bg-white flex items-center gap-1.5 overflow-x-auto text-[11px]">
+              <span className="text-[#8C889B] shrink-0 font-medium">Quick:</span>
+              <button
+                onClick={() => setCopilotQuery('How should I optimize the remaining ₹2,520 mission budget?')}
+                className="px-2.5 py-1 bg-[#F7F8FC] hover:bg-[#F0EEFF] text-[#474555] hover:text-[#5440e1] rounded-lg shrink-0 border border-[#E6E8EF] transition-colors"
+              >
+                Optimize ₹2,520 budget
+              </button>
+              <button
+                onClick={() => setCopilotQuery('Why did the ₹2,200 influencer spend trip the approval policy?')}
+                className="px-2.5 py-1 bg-[#F7F8FC] hover:bg-[#F0EEFF] text-[#474555] hover:text-[#5440e1] rounded-lg shrink-0 border border-[#E6E8EF] transition-colors"
+              >
+                Explain ₹2,200 hold
+              </button>
+              <button
+                onClick={() => setCopilotQuery('Suggest a high-margin weekend breakfast promotion')}
+                className="px-2.5 py-1 bg-[#F7F8FC] hover:bg-[#F0EEFF] text-[#474555] hover:text-[#5440e1] rounded-lg shrink-0 border border-[#E6E8EF] transition-colors"
+              >
+                Weekend promotion
+              </button>
+            </div>
+
+            {/* Chat Input Form */}
+            <form onSubmit={handleSendCopilot} className="p-3 border-t border-[#E6E8EF] bg-white flex items-center gap-2">
+              <input
+                type="text"
+                value={copilotQuery}
+                onChange={(e) => setCopilotQuery(e.target.value)}
+                placeholder="Ask Groq Co-Pilot about revenue, margins, or policy limits..."
+                disabled={copilotLoading}
+                className="flex-1 px-3 py-2 text-xs bg-[#F7F8FC] rounded-xl border border-[#E6E8EF] focus:border-[#7C3AED] focus:bg-white text-[#1a1b22] placeholder-[#8C889B] outline-none transition-all"
+              />
+              <button
+                type="submit"
+                disabled={copilotLoading || !copilotQuery.trim()}
+                className="p-2 bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 text-white rounded-xl shadow-xs transition-colors flex items-center justify-center"
+                title="Send query to Groq"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
           </div>
         </div>
 

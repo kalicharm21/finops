@@ -133,6 +133,16 @@ export const Header: React.FC = () => {
           <span>{isProcessingCycle ? 'Agent Thinking...' : 'Run Agent Cycle'}</span>
         </button>
 
+        {/* Groq LPU Badge */}
+        <div 
+          title="Powered by Groq LPU™ Engine • Model: llama-3.3-70b-versatile"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-[#F5F3FF] border border-[#DDD6FE] text-[#5B21B6] rounded-md text-xs font-medium cursor-help"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#7C3AED] animate-pulse"></span>
+          <span className="font-semibold">Groq LPU™</span>
+          <span className="text-[10px] bg-[#EDE9FE] text-[#6D28D9] px-1 py-0.2 rounded font-mono font-bold">70B</span>
+        </div>
+
         {/* Test Mode Badge */}
         <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-md text-xs font-medium">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
