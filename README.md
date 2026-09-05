@@ -251,4 +251,4 @@ npm start
 
 ## 9. License
 
-MIT License. Designed for AI Studio and production Cloud Run deployments.
+Ishaan Mittal.
